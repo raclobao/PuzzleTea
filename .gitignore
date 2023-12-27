@@ -1,1 +1,5 @@
 manage.py
+settings.py
+PuzzleTea/__pycache__/
+PuzzleTeaApp/__pycache__/
+PuzzleTeaApp/migrations
