@@ -1,0 +1,9 @@
+<p><a href = "/"> Home</a>  &nbsp  <a href = {% url 'productsIndex' %}> Products </a></p>
+{% if user.is_authenticated %}
+{{user.username}}
+(<a href="{% url 'logout' %}">logout</a>)
+{% else %}
+(<a href="{% url 'login' %}">login</a>)
+{% endif %}
+
+<hr>

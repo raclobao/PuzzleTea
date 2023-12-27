@@ -1,0 +1,24 @@
+{% extends 'main.html' %}
+{% load static %}
+
+{% block content %}
+
+<h1>{{product_ref.name}}</h1>
+
+{% if product_ref.picture is null %} 
+    <img src="{% static 'ImageNotFound.png' %}" style="height:30vh"/>
+{% else %}
+    <img src="{{product_ref.picture}}" style="height:30vh;"/>
+{% endif %}
+
+<p>Price (€): {{product_ref.price}}</p>
+
+{% for field in specific_fields %}
+    <p>{{field.verbose_name}}: {{specific_ref|get_attr:field.name}}</p>
+{% endfor %}
+
+<!-- Add to shopping cart -->
+<!-- {% if user.is_authenticated %} -->
+<!---->
+<!-- {% endif %} -->
+<!-- {% endblock content %} -->

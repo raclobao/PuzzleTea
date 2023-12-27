@@ -1,0 +1,10 @@
+{% extends 'main.html' %}
+
+{% block content %}
+
+<h1>Products</h1>
+<h2><a href="{% url 'productsType' 'cube' %}"> Magic Cubes! ({{numCubes}})</a></h2>
+<h2><a href="{% url 'productsType' 'jig' %}"> Jigsaw Puzzles ! ({{numJigsaws}})</a></h2>
+<h2><a href="{% url 'productsType' 'tea' %}"> Chás, por alguma razão? ({{numTeas}})</a></h2>
+
+{% endblock content %}

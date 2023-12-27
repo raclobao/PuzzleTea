@@ -1,0 +1,33 @@
+<h2>Register</h2>
+<form method='POST' autocomplete="off">
+    {% csrf_token %} 
+    <!-- {{RegisterForm.as_p}} -->
+    <!-- <button type="submit">Register</button> -->
+
+    <p>
+    {{RegisterForm.username.label}}:
+    {{RegisterForm.username}}
+    </p>
+
+    <p>
+    {{RegisterForm.email.label}}:
+    {{RegisterForm.email}}
+    </p>
+
+    <p>
+    {{RegisterForm.password1.label}}:
+    {{RegisterForm.password1}}
+    </p>
+
+    <p>
+    {{RegisterForm.password2.label}}:
+    {{RegisterForm.password2}}
+    </p>
+
+
+    <input type="submit" value="Register"/>
+</form>
+
+{{RegisterForm.errors}}
+
+<b>Already a Member?<b> <a href="{% url 'login'%}">Login</a>

@@ -1,0 +1,25 @@
+<h2>Login</h2>
+<form method='POST' autocomplete="off">
+    {% csrf_token %} 
+    <!-- {{LoginForm.as_p}} -->
+    <!-- <button type="submit">Register</button> -->
+    <!-- <input type="submit" value="Register"/> -->
+
+    <p>
+    {{LoginForm.username.label}}:
+    {{LoginForm.username}}
+    </p>
+
+    <p>
+    {{LoginForm.password.label}}:
+    {{LoginForm.password}}
+    </p>
+
+    <input type="submit" value="Login"/>
+</form>
+
+{% for message in messages %}
+    <p>{{message}}</p>
+{% endfor %}
+
+<b>Not yet a member?</b> <a href="{% url 'register'%}">Register now</a>
