@@ -3,16 +3,6 @@
 {% block content %}
 
 
-<div>
-    <div>
-        {% for product in product_ref %}
-        <div>
-            <h5>{{product.barcode}} -- <a href = "{% url 'products' product.barcode %}">{{product.name}}</a></h5>
-            <hr>
-        </div>
-        {% endfor %}
-    </div>
-</div>
 
 
 {% endblock content %}

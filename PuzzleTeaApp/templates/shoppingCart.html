@@ -1,0 +1,14 @@
+{% extends 'main.html' %}
+
+{% block content %}
+
+<h1>{{user.username}}'s cart</h1>
+
+{% for item in shoppingCart_ref|by_currentUser %} 
+<p>
+    {{item.product.name}}: {{item.quantity}}
+    <a href="{% url 'cartUpdate' item.product.barcode '+' %}" style="text-decoration: none;">↑</a><a href="{% url 'cartUpdate' item.product.barcode '-' %}" style="text-decoration: none;">↓</a>
+</p>  
+{% endfor %}
+
+{% endblock content %}
