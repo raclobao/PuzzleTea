@@ -2,13 +2,55 @@
 
 {% block content %}
 
+<style>
+table, th, td {
+    border: 1px solid black;
+}
+td {
+    padding: 12px;
+}
+</style>
 <h1>{{user.username}}'s cart</h1>
 
+{% if not cartEmpty %}
+
+<table>
+    <tr>
+        <td>Item</td>
+        <td>Quantity</td>
+        <td>Price</td>
+    </tr>
+
 {% for item in shoppingCart_ref|by_currentUser %} 
-<p>
-    {{item.product.name}}: {{item.quantity}}
-    <a href="{% url 'cartUpdate' item.product.barcode '+' %}" style="text-decoration: none;">↑</a><a href="{% url 'cartUpdate' item.product.barcode '-' %}" style="text-decoration: none;">↓</a>
-</p>  
+
+<tr>
+    <td>
+        {{item.product.name}}
+        <a href="{% url 'cartUpdate' item.product.barcode 'remove' %}" style="text-decoration: none; color:red;">×</a>
+    </td>
+
+    <td>
+        {{item.quantity}} 
+        <a href="{% url 'cartUpdate' item.product.barcode '+' %}" style="text-decoration: none;">↑</a><a href="{% url 'cartUpdate' item.product.barcode '-' %}" style="text-decoration: none;">↓</a>
+    </td>
+
+    <td>
+        {{ item|get_totalPrice }} €
+    </td>
+</tr>  
+
 {% endfor %}
+
+<tr style="font-weight:bold;">
+    <td>Total</td>
+    <td>{{totalQuantity}}</td>
+    <td>{{totalPrice}} €</td>
+</tr>
+</table>
+
+{% else %}
+{{ShippingCart_ref.count}}
+<p>You have no items in your cart. Capitalism is good, go <a href="{% url 'productsIndex' %}">shopping</a>!</p>
+{% endif %}
 
 {% endblock content %}

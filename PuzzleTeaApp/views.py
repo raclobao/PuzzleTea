@@ -6,6 +6,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import auth, User
 from django.contrib import messages
 from django.template.defaulttags import register
+from numpy import sum
 
 # Create your views here.
 
@@ -91,18 +92,25 @@ def productsType(request, type):
 def UserCart(request):
      
     @register.filter
+    def get_totalPrice(obj):
+        return obj.quantity*obj.product.price
+
+    @register.filter
     def by_currentUser(objs):
         # user = User.objects.get(pk=id)
         # username = user.id
-        userId = request.user.id
-        print(userId)
         return objs.filter(client=userId).order_by('product')
+
+    userId = request.user.id
 
     if not request.user.is_authenticated:
         return redirect('/')
 
     ShoppingCartTable = ShoppingCart.objects.all()
-    context = {'shoppingCart_ref': ShoppingCartTable}
+    totalQuantity = sum([item.quantity for item in ShoppingCartTable if item.client.id == userId])
+    totalPrice = sum([item.quantity*item.product.price for item in ShoppingCartTable if item.client.id == userId])
+
+    context = {'shoppingCart_ref': ShoppingCartTable, 'totalPrice':totalPrice, 'totalQuantity':totalQuantity, 'cartEmpty': ShoppingCartTable.count() <= 0}
     return render(request, 'shoppingCart.html', context)
 
 def CartUpdate(request, barcode, operation):
@@ -114,14 +122,18 @@ def CartUpdate(request, barcode, operation):
 
     if operation == '+':
         cartItem.quantity += 1;
-        if cartItem.quantity >= 0:
+        if cartItem.quantity >= 1:
             cartItem.save()
         return redirect('shoppingCart')
 
     elif operation == '-':
         cartItem.quantity -= 1;
-        if cartItem.quantity >= 0:
+        if cartItem.quantity >= 1:
             cartItem.save()
+        return redirect('shoppingCart')
+
+    elif operation == 'remove':
+        cartItem.delete()
         return redirect('shoppingCart')
 
     else:
