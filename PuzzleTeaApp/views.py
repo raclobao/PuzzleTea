@@ -1,12 +1,13 @@
 from django.http import Http404, HttpResponse
 from django.shortcuts import render, redirect
-from .models import Jigsaw, Product, Cube, Tea, ShoppingCart
-from .forms import CreateUserForm, LoginForm, ShoppingForm
+from .models import Jigsaw, Product, Cube, Stock, Tea, ShoppingCart
+from .forms import AddressForm, CreateUserForm, LoginForm, ShoppingForm
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import auth, User
+from django.contrib.auth.models import auth
 from django.contrib import messages
 from django.template.defaulttags import register
 from numpy import sum
+from .order import processOrder
 
 # Create your views here.
 
@@ -14,6 +15,7 @@ def home(request):
     products = Product.objects.all()
     context = {'product_ref': products}
     return render(request, 'home.html', context)
+
 
 def product(request, barcode_id):
     @register.filter
@@ -60,13 +62,11 @@ def product(request, barcode_id):
         if form.is_valid():
             NewShoppingCartEntry = ShoppingCart(quantity=quantity, client=request.user, product=product) 
             NewShoppingCartEntry.save()
-            messages.info(request, "Item added to your cart!")
-        else:
-            messages.info(request, "Invalid input!")
 
     context = {'product_ref': product, 'specific_ref': specificProduct, 'specific_fields': Specific_fields, 'ShoppingForm': form}
 
     return render(request, 'products.html', context)
+
 
 def productsIndex(request):
     context = { 'numJigsaws':Jigsaw.objects.all().count(),
@@ -86,35 +86,79 @@ def productsType(request, type):
     if type not in ["jig", "cube", "tea"]:
         raise Http404("Wrong type!")
 
-
     return render(request, 'productsType.html', context)
 
-def UserCart(request):
-     
+
+def userCart(request):
     @register.filter
     def get_totalPrice(obj):
         return obj.quantity*obj.product.price
 
     @register.filter
-    def by_currentUser(objs):
-        # user = User.objects.get(pk=id)
-        # username = user.id
-        return objs.filter(client=userId).order_by('product')
+    def by_currentUser(objs, correctUser):  #why not using userId instead of passing "correctUser"? weird bug with userId not changing with different accounts
+        return objs.filter(client=correctUser).order_by('product')
 
-    userId = request.user.id
 
     if not request.user.is_authenticated:
         return redirect('/')
+
+    userId = request.user.id
+
+    if request.method == 'POST':
+        form = AddressForm(request.POST)
+
+        if form.is_valid():
+            address = request.POST.get('address')
+            processOrder(userId, address)
+            redirect('shoppingCart')
+
+    userShoppingCart = ShoppingCart.objects.filter(client=userId) 
+    form = AddressForm(request.POST)
 
     ShoppingCartTable = ShoppingCart.objects.all()
     totalQuantity = sum([item.quantity for item in ShoppingCartTable if item.client.id == userId])
     totalPrice = sum([item.quantity*item.product.price for item in ShoppingCartTable if item.client.id == userId])
 
-    context = {'shoppingCart_ref': ShoppingCartTable, 'totalPrice':totalPrice, 'totalQuantity':totalQuantity, 'cartEmpty': ShoppingCartTable.count() <= 0}
+    numMessages = 0
+
+    for item in userShoppingCart:
+        itemStocks = Stock.objects.filter(product=item.product)
+        availabelQuantity = int(sum([stock.quantity for stock in itemStocks]))
+
+        if availabelQuantity == 0:
+            messages.info(request, 'Item "{}": UNAVAILABLE'.format(item.product.name, item.quantity, availabelQuantity))
+            numMessages+=1
+
+        elif availabelQuantity < item.quantity:
+            messages.info(request, 'Item "{}": {} in cart but only {} in stock '.format(item.product.name, item.quantity, availabelQuantity))
+            numMessages+=1
+
+
+    context = {'shoppingCart_ref': ShoppingCartTable, 'totalPrice':totalPrice, 'totalQuantity':totalQuantity, \
+               'cartEmpty': userShoppingCart.count() <= 0, 'hasMessages':numMessages > 0, 'correctUser':userId, 'AddressForm':form}
+
     return render(request, 'shoppingCart.html', context)
 
-def CartUpdate(request, barcode, operation):
 
+def adjustCart(request):
+    userId = request.user.id
+    userShoppingCart = ShoppingCart.objects.filter(client=userId) 
+
+    for item in userShoppingCart:
+        itemStocks = Stock.objects.filter(product=item.product)
+        availabelQuantity = int(sum([stock.quantity for stock in itemStocks]))
+
+        if availabelQuantity == 0:
+            item.delete()
+
+        elif availabelQuantity < item.quantity:
+            item.quantity = availabelQuantity
+            item.save()
+
+    return redirect('shoppingCart')
+
+
+def cartUpdate(request, barcode, operation):
     try:
         cartItem = ShoppingCart.objects.get(product=barcode, client=request.user.id)
     except:
@@ -140,9 +184,7 @@ def CartUpdate(request, barcode, operation):
         return redirect('/')
 
 
-
-def UserRegister(request):
-
+def userRegister(request):
     if request.user.is_authenticated:
         return redirect("/")
 
@@ -169,13 +211,14 @@ def UserRegister(request):
 # def debug(request):
 #     return HttpResponse('....')
 
-def UserLogin(request):
 
+def userLogin(request):
     if request.user.is_authenticated:
         return redirect("/")
 
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
+
         if form.is_valid():
             GivenUsername = request.POST.get('username')
             GivenPassword = request.POST.get('password')
@@ -193,7 +236,7 @@ def UserLogin(request):
     return render(request, 'login.html', context)
 
 
-def UserLogout(request):
+def userLogout(request):
     auth.logout(request)
     return redirect("/")
 

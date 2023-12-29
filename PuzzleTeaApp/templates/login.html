@@ -16,7 +16,7 @@
 </form>
 
 {% for message in messages %}
-    <p>{{message}}</p>
+    <p style="color:red;">{{message}}</p>
 {% endfor %}
 
 <b>Not yet a member?</b> <a href="{% url 'register'%}">Register now</a>

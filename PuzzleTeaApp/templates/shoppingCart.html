@@ -21,7 +21,7 @@ td {
         <td>Price</td>
     </tr>
 
-{% for item in shoppingCart_ref|by_currentUser %} 
+{% for item in shoppingCart_ref|by_currentUser:correctUser %} 
 
 <tr>
     <td>
@@ -48,9 +48,40 @@ td {
 </tr>
 </table>
 
+{% if hasMessages %}
+<br>
+Your order cannot be fully fulfilled due to limited stock availability:
+<br>
+<br>
+{% for message in messages %}
+    <li>{{message}}</li>
+{% endfor %}
+
+<br>
+<form action="{% url 'adjustCart' %}" method="POST">
+    Do you want to adjust for the available stock?
+    {% csrf_token %} 
+    <button type="submit">Ok!</button>
+</form>
+
 {% else %}
+
+<br>
+<form action="{% url 'shoppingCart' %}" method="POST" autocomplete="off">
+    {% csrf_token %} 
+    {{AddressForm.address.label}}
+    {{AddressForm.address}}
+    <button type="submit" onclick="window.alert('Your order was successfully submitted!')">Order!</button>
+</form>
+
+{% endif %}
+
+{% else %}
+
 {{ShippingCart_ref.count}}
 <p>You have no items in your cart. Capitalism is good, go <a href="{% url 'productsIndex' %}">shopping</a>!</p>
+
 {% endif %}
+
 
 {% endblock content %}

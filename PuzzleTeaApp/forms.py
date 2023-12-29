@@ -10,9 +10,12 @@ class CreateUserForm(UserCreationForm):
         fields = ['username', 'email', 'password1', 'password2']
 
 class LoginForm(AuthenticationForm):
-
     username = forms.CharField(widget=TextInput)
     password = forms.CharField(widget=PasswordInput)  
 
 class ShoppingForm(forms.Form):
     quantity = forms.IntegerField(max_value=100, min_value= 1, widget=NumberInput(attrs={'style':'width:40px;'}))
+
+class AddressForm(forms.Form):
+    address = forms.CharField(widget=TextInput)
+

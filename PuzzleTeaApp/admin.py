@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Cube, Tea, Jigsaw, Stock, ShoppingCart
+from .models import Cube, BatchQuantity, ShippingOrder, Tea, Jigsaw, Stock, ShoppingCart
 # Register your models here.
 
 # class Admin_Product(admin.ModelAdmin):
@@ -29,3 +29,5 @@ admin.site.register(Jigsaw, Admin_Jigsaw)
 admin.site.register(Tea, Admin_Tea)
 admin.site.register(Stock)
 admin.site.register(ShoppingCart)
+admin.site.register(BatchQuantity)
+admin.site.register(ShippingOrder)

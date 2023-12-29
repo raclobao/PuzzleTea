@@ -4,9 +4,7 @@ from django.contrib.auth.models import User
 User._meta.get_field('email')._unique = True
 
 class Product(models.Model):
-
     DefaultType = 'jig'
-
     barcode = models.IntegerField(primary_key=True)
     type = models.CharField()
     name = models.CharField(null=False)
@@ -19,15 +17,16 @@ class Product(models.Model):
         super(Product, self).save(*args, **kwargs)
 
     def __str__(self):  # para aparecer o barcode em vez de "product object {barcode}" no admin do stock
-        return str(self.barcode) + " - " + str(self.name)
+        return '#' + str(self.barcode) + " - " + str(self.name)
 
     class Meta:
         managed = True
         db_table = 'product'
 
+
 class Stock(models.Model):
     batchid = models.CharField()  
-    quantity = models.IntegerField(null=False, default=0)
+    quantity = models.PositiveIntegerField(null=False, default=0)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, db_column='barcode')
 
     def __str__(self):
@@ -64,7 +63,6 @@ class Cube(Product):
         
 
 class Tea(Product):
-
     class caffeineLevels(models.TextChoices):
         low = "1", "Low"
         medium = "2", "Medium"
@@ -82,27 +80,34 @@ class Tea(Product):
 
 
 
-class Shippingorder(models.Model):
+class ShippingOrder(models.Model):
     # orderid = models.BigIntegerField(primary_key=True)
     orderdate = models.DateField(null=False)
     shippingadress = models.CharField(null=False)
     client = models.ForeignKey(User, on_delete=models.CASCADE, db_column='clientid')
+
+    def __str__(self):
+        return str(self.client) + ' - ' + str(self.orderdate)
 
     class Meta:
         managed = True
         db_table = 'shippingorder'
 
 
-class Quantity(models.Model):
+class BatchQuantity(models.Model):
     quantity = models.IntegerField(null=False)
+    batchid = models.IntegerField(null=False)
     # shippingorder = models.OneToOneField('Shippingorder', on_delete=models.CASCADE, db_column='shippingorder_orderid', primary_key=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE, db_column='barcode')
-    shippingorder = models.ForeignKey(Shippingorder, on_delete=models.CASCADE, db_column='orderid')  
+    shippingorder = models.ForeignKey(ShippingOrder, on_delete=models.CASCADE, db_column='orderid')  
+
+    def __str__(self):
+        return str(self.shippingorder) + ' - ' + str(self.product.name) + ' - batch ' + str(self.batchid)
 
     class Meta:
         managed = True
         db_table = 'quantity'
-        unique_together = (('shippingorder', 'product'),)
+        unique_together = (('shippingorder', 'product', 'batchid'),)
 
 
 class ShoppingCart(models.Model):
