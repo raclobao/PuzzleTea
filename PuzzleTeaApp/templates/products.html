@@ -3,9 +3,6 @@
 
 {% block content %}
 
-<!-- Load jquery library -->
-<!-- <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script> -->
-
 <h1>{{product_ref.name}}</h1>
 
 {% if product_ref.picture is null %} 
@@ -20,10 +17,23 @@
     <p>{{field.verbose_name}}: {{specific_ref|get_attr:field.name}}</p>
 {% endfor %}
 
+<p>Stock: 
+{% if availableQuantity > 3 %}
+<span style="color:green">In stock</span>
+{% elif availableQuantity > 0%}
+    <span style="color:#e6b400">Limited</span>
+{% elif availableQuantity == 0 %}
+    <span style="color:red">Not available</span>
+{% endif %}
+</p>
+
 <br>
 <br>
 
+
 {% if user.is_authenticated %}
+
+    {% if availableQuantity > 0%}
 
     {% if product_ref|alreadyAdded %}
 
@@ -40,21 +50,7 @@
 
     {% endif %}
 
-    {% comment %}
-    <div id="msg" style="color:green;">
-    {% for message in messages %}
-        <p>{{message}}</p>
-    {% endfor %}
-    </div>
-
-    <script>
-        setTimeout(function(){
-            if ($('#msg').length > 0) {
-                $('#msg').remove();
-            }
-        },2000)
-    </script>
-    {% endcomment %}
+    {% endif %}
 
 {% endif %}
 {% endblock content %}

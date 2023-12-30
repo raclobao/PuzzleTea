@@ -52,6 +52,10 @@ def product(request, barcode_id):
         Specific_fields = list(set(Type_fields) - set(Product_fields))
 
         Specific_fields = ([f for f in Specific_fields if f.name != 'product']) #removes product_barcode
+
+        itemStocks = Stock.objects.filter(product = product)
+        availableQuantity = int(sum([stock.quantity for stock in itemStocks]))
+
     except:
         raise Http404("Product not found....")
 
@@ -63,7 +67,7 @@ def product(request, barcode_id):
             NewShoppingCartEntry = ShoppingCart(quantity=quantity, client=request.user, product=product) 
             NewShoppingCartEntry.save()
 
-    context = {'product_ref': product, 'specific_ref': specificProduct, 'specific_fields': Specific_fields, 'ShoppingForm': form}
+    context = {'product_ref': product, 'specific_ref': specificProduct, 'specific_fields': Specific_fields, 'ShoppingForm': form, 'availableQuantity':availableQuantity}
 
     return render(request, 'products.html', context)
 

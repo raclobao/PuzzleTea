@@ -30,7 +30,7 @@ class Stock(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, db_column='barcode')
 
     def __str__(self):
-        return '#' + str(self.product) + ' - batch ' + str(self.batchid)
+        return str(self.product) + ' - batch ' + str(self.batchid)
 
     class Meta:
         managed = True
