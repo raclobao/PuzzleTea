@@ -2,10 +2,10 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from .models import BatchQuantity, ShippingOrder, ShoppingCart, Stock
 
-def processOrder(client, address):
+def processOrder(client, address, totalprice):
     date = datetime.now()
     user = User.objects.get(pk=client)
-    shippingOrder = ShippingOrder(orderdate=date, client=user, shippingadress=address)
+    shippingOrder = ShippingOrder(orderdate=date, client=user, shippingadress=address, totalprice=totalprice)
     shippingOrder.save()
     userShoppingCart = ShoppingCart.objects.filter(client=client) 
 
@@ -14,7 +14,7 @@ def processOrder(client, address):
 
         for batch in itemStock:
             if batch.quantity >= item.quantity:
-                quantityRow = BatchQuantity(product=item.product, quantity=item.quantity, batchid=batch.batchid, shippingorder=shippingOrder)
+                quantityRow = BatchQuantity(stock=batch, quantity=item.quantity, shippingorder=shippingOrder)
                 batch.quantity -= item.quantity
                 item.quantity = 0 
                 quantityRow.save()
@@ -22,7 +22,7 @@ def processOrder(client, address):
                 break
 
             else:
-                quantityRow = BatchQuantity(product=item.product, quantity=batch.quantity, batchid=batch.batchid, shippingorder=shippingOrder)
+                quantityRow = BatchQuantity(quantity=item.quantity, stock=batch, shippingorder=shippingOrder)
                 item.quantity -= batch.quantity
                 batch.quantity = 0
                 quantityRow.save()

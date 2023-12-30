@@ -19,23 +19,21 @@
 
 <p>Stock: 
 {% if availableQuantity > 3 %}
-<span style="color:green">In stock</span>
+    <span style="color:green">In stock</span>
 {% elif availableQuantity > 0%}
     <span style="color:#e6b400">Limited</span>
 {% elif availableQuantity == 0 %}
-    <span style="color:red">Not available</span>
+    <span style="color:red">Out of stock</span>
 {% endif %}
 </p>
 
 <br>
 <br>
 
-
 {% if user.is_authenticated %}
 
-    {% if availableQuantity > 0%}
-
-    {% if product_ref|alreadyAdded %}
+{% if availableQuantity > 0%}
+    {% if product_ref|alreadyAdded:correctUser %}
 
     Shopping cart: <span style="color:green;"> already added</span>
 
@@ -49,8 +47,8 @@
     </form>
 
     {% endif %}
-
     {% endif %}
 
 {% endif %}
+
 {% endblock content %}

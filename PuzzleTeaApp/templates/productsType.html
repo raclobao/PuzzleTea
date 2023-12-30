@@ -2,12 +2,10 @@
 
 {% block content %}
 
-
 {% for product in products_ref|is_type:type_ref %}
 <div>
     <h3><a href = "{% url 'products' product.barcode %}">{{product.name}}</a></h3>
 </div>
 {% endfor %}
-
 
 {% endblock content %}

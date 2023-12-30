@@ -1,20 +1,16 @@
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import render, redirect
-from .models import Jigsaw, Product, Cube, Stock, Tea, ShoppingCart
-from .forms import AddressForm, CreateUserForm, LoginForm, ShoppingForm
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import auth
 from django.contrib import messages
 from django.template.defaulttags import register
 from numpy import sum
 from .order import processOrder
-
-# Create your views here.
+from .models import Jigsaw, Product, Cube, Stock, Tea, ShoppingCart
+from .forms import AddressForm, CreateUserForm, LoginForm, ShoppingForm
 
 def home(request):
-    products = Product.objects.all()
-    context = {'product_ref': products}
-    return render(request, 'home.html', context)
+    return render(request, 'home.html')
 
 
 def product(request, barcode_id):
@@ -26,24 +22,28 @@ def product(request, barcode_id):
         return getattr(obj, attr)
 
     @register.filter
-    def alreadyAdded(obj):
+    def alreadyAdded(obj, correctUser): #Same issue as filter by_currentuser
         '''
         Check if an specified object is already in the user's shopping cart 
         '''
-        ShoppingItem =  ShoppingCart.objects.filter(product = obj.barcode, client = request.user.id).first()
+        ShoppingItem =  ShoppingCart.objects.filter(product = obj.barcode, client = correctUser).first()
         return ShoppingItem != None 
 
     try:
         form = ShoppingForm()
 
+        userId = request.user.id
         product = Product.objects.get(barcode = barcode_id)
         type = product.type
+
         if type == 'cube':
             Type_fields = Cube._meta.get_fields()
             specificProduct = Cube.objects.get(barcode = barcode_id)
+
         elif type == 'jig':
             specificProduct = Jigsaw.objects.get(barcode = barcode_id)
             Type_fields = Jigsaw._meta.get_fields()
+
         elif type == 'tea':
             specificProduct = Tea.objects.get(barcode = barcode_id)
             Type_fields = Tea._meta.get_fields()
@@ -57,7 +57,7 @@ def product(request, barcode_id):
         availableQuantity = int(sum([stock.quantity for stock in itemStocks]))
 
     except:
-        raise Http404("Product not found....")
+        raise Http404('Product not found....')
 
     if request.method == 'POST':
         form = ShoppingForm(request.POST)
@@ -67,7 +67,7 @@ def product(request, barcode_id):
             NewShoppingCartEntry = ShoppingCart(quantity=quantity, client=request.user, product=product) 
             NewShoppingCartEntry.save()
 
-    context = {'product_ref': product, 'specific_ref': specificProduct, 'specific_fields': Specific_fields, 'ShoppingForm': form, 'availableQuantity':availableQuantity}
+    context = {'product_ref': product, 'specific_ref': specificProduct, 'specific_fields': Specific_fields, 'ShoppingForm': form, 'availableQuantity':availableQuantity, 'correctUser':userId}
 
     return render(request, 'products.html', context)
 
@@ -87,8 +87,8 @@ def productsType(request, type):
     products = Product.objects.all()
     context = {'products_ref': products, 'type_ref': type}
 
-    if type not in ["jig", "cube", "tea"]:
-        raise Http404("Wrong type!")
+    if type not in ['jig', 'cube', 'tea']:
+        raise Http404('Wrong type!')
 
     return render(request, 'productsType.html', context)
 
@@ -107,17 +107,7 @@ def userCart(request):
         return redirect('/')
 
     userId = request.user.id
-
-    if request.method == 'POST':
-        form = AddressForm(request.POST)
-
-        if form.is_valid():
-            address = request.POST.get('address')
-            processOrder(userId, address)
-            redirect('shoppingCart')
-
     userShoppingCart = ShoppingCart.objects.filter(client=userId) 
-    form = AddressForm(request.POST)
 
     ShoppingCartTable = ShoppingCart.objects.all()
     totalQuantity = sum([item.quantity for item in ShoppingCartTable if item.client.id == userId])
@@ -137,7 +127,15 @@ def userCart(request):
             messages.info(request, 'Item "{}": {} in cart but only {} in stock '.format(item.product.name, item.quantity, availabelQuantity))
             numMessages+=1
 
+    if request.method == 'POST':
+        form = AddressForm(request.POST)
 
+        if form.is_valid():
+            address = request.POST.get('address')
+            processOrder(userId, address, totalPrice)
+            return redirect('shoppingCart')
+
+    form = AddressForm(request.POST)
     context = {'shoppingCart_ref': ShoppingCartTable, 'totalPrice':totalPrice, 'totalQuantity':totalQuantity, \
                'cartEmpty': userShoppingCart.count() <= 0, 'hasMessages':numMessages > 0, 'correctUser':userId, 'AddressForm':form}
 
@@ -170,8 +168,7 @@ def cartUpdate(request, barcode, operation):
 
     if operation == '+':
         cartItem.quantity += 1;
-        if cartItem.quantity >= 1:
-            cartItem.save()
+        cartItem.save()
         return redirect('shoppingCart')
 
     elif operation == '-':
@@ -185,40 +182,29 @@ def cartUpdate(request, barcode, operation):
         return redirect('shoppingCart')
 
     else:
-        return redirect('/')
+        return redirect('shoppingCart')
 
 
 def userRegister(request):
     if request.user.is_authenticated:
-        return redirect("/")
+        return redirect('/')
 
     if request.method == 'POST':
         form = CreateUserForm(request.POST)
 
         if form.is_valid():
             form.save()
-
-            GivenUsername = request.POST.get('username')
-            GivenPassword = request.POST.get('password')
-
-            user = authenticate(request, username=GivenUsername, password=GivenPassword)
-            auth.login(request, user)
-
-            return redirect("/")
-        # else:
-        #     return render(request, "register.html", context={'RegisterForm': form})
+            return redirect('login')
     else:
         form = CreateUserForm()
 
     context = {'RegisterForm': form}
     return render(request, 'register.html', context)
-# def debug(request):
-#     return HttpResponse('....')
 
 
 def userLogin(request):
     if request.user.is_authenticated:
-        return redirect("/")
+        return redirect('/')
 
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
@@ -226,11 +212,9 @@ def userLogin(request):
         if form.is_valid():
             GivenUsername = request.POST.get('username')
             GivenPassword = request.POST.get('password')
-
-            user = authenticate(request, username=GivenUsername, password=GivenPassword)
-            if user is not None:
-                auth.login(request, user)
-                return redirect("/")
+            user=authenticate(request, username=GivenUsername, password=GivenPassword)
+            auth.login(request, user)
+            return redirect('/')
         else:
             messages.info(request, "Username or Password is incorrect")
     else:
@@ -242,5 +226,4 @@ def userLogin(request):
 
 def userLogout(request):
     auth.logout(request)
-    return redirect("/")
-
+    return redirect('/')
